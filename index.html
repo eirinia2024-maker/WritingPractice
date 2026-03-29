@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meadow Word Game Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --lavender: #c9b6e4;
+      --lavender-2: #d4c6ed;
+      --green: #bfdDB8;
+      --green-2: #d6eed0;
+      --yellow: #f6d97a;
+      --blue: #bfdceb;
+      --pink: #f8ccd6;
+      --bg: #f6f3ee;
+      --ink: #3a3450;
+      --danger: #ef6b6b;
+      --success: #66b36d;
+      --shadow: 0 10px 30px rgba(74, 63, 103, 0.12);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: var(--ink);
+      background: linear-gradient(to bottom, #dff3ff 0%, #eaf7ff 38%, #dff0d8 39%, #bfe3ac 70%, #9fd18d 100%);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 12% 14%, rgba(255,255,255,.88) 0 4.2rem, transparent 4.3rem),
+        radial-gradient(circle at 17% 15%, rgba(255,255,255,.88) 0 3.3rem, transparent 3.4rem),
+        radial-gradient(circle at 22% 14%, rgba(255,255,255,.88) 0 4.4rem, transparent 4.5rem),
+        radial-gradient(circle at 77% 16%, rgba(255,255,255,.9) 0 4rem, transparent 4.1rem),
+        radial-gradient(circle at 82% 18%, rgba(255,255,255,.9) 0 3.1rem, transparent 3.2rem),
+        radial-gradient(circle at 86% 16%, rgba(255,255,255,.9) 0 4.1rem, transparent 4.2rem);
+      pointer-events: none;
+      opacity: .9;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    .levels {
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255,255,255,.28);
+      backdrop-filter: blur(6px);
+      border-right: 2px solid rgba(255,255,255,.45);
+    }
+
+    .level-btn {
+      appearance: none;
+      border: none;
+      border-radius: 18px;
+      padding: 12px 0;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255,255,255,.75);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      transition: transform .15s ease, background .15s ease, opacity .15s ease;
+    }
+
+    .level-btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .level-btn.active { background: var(--lavender); }
+    .level-btn.locked { opacity: .45; cursor: not-allowed; }
+
+    .game {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 14px;
+      padding: 18px 22px 24px;
+      position: relative;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .pill {
+      background: rgba(255,255,255,.76);
+      border: 2px solid rgba(255,255,255,.55);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .timer-zone {
+      position: relative;
+      min-height: 120px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 4px 16px 0;
+    }
+
+    .apples-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      justify-content: center;
+      flex-wrap: nowrap;
+      padding: 0 90px 8px;
+    }
+
+    .apple {
+      width: 54px;
+      height: 58px;
+      position: relative;
+      transition: transform .25s ease, opacity .35s ease, filter .25s ease;
+    }
+
+    .apple::before {
+      content: '';
+      position: absolute;
+      inset: 10px 4px 0;
+      background: radial-gradient(circle at 35% 35%, #ffb2b2 0 20%, #ff7676 20% 58%, #e24b4b 58% 100%);
+      border-radius: 50% 50% 45% 45% / 55% 55% 45% 45%;
+      box-shadow: inset -6px -8px 0 rgba(148, 30, 30, .12), 0 5px 10px rgba(80, 34, 34, .15);
+    }
+
+    .apple::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      background: #7cc576;
+      border-radius: 0 90% 0 90%;
+      transform: translateX(-10%) rotate(-18deg);
+      box-shadow: -3px 2px 0 #6b9250;
+    }
+
+    .apple .stem {
+      position: absolute;
+      width: 4px;
+      height: 14px;
+      background: #6f4c2c;
+      left: calc(50% - 2px);
+      top: 2px;
+      border-radius: 4px;
+    }
+
+    .apple.bite-1::before {
+      clip-path: polygon(0 0, 100% 0, 100% 64%, 85% 62%, 80% 70%, 72% 60%, 64% 72%, 56% 62%, 48% 74%, 40% 62%, 0 64%);
+    }
+
+    .apple.bite-2::before {
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 86% 46%, 80% 56%, 72% 44%, 64% 58%, 54% 44%, 45% 59%, 35% 44%, 0 46%);
+    }
+
+    .apple.empty {
+      opacity: 0;
+      transform: translateY(12px) scale(.75);
+      pointer-events: none;
+    }
+
+    .apple.shake {
+      animation: appleShake .45s ease;
+      filter: drop-shadow(0 0 0.45rem rgba(239, 107, 107, .45));
+    }
+
+    @keyframes appleShake {
+      0%,100% { transform: rotate(0) translateY(0); }
+      20% { transform: rotate(-10deg) translateY(-2px); }
+      40% { transform: rotate(10deg) translateY(1px); }
+      60% { transform: rotate(-8deg) translateY(-1px); }
+      80% { transform: rotate(8deg) translateY(1px); }
+    }
+
+    .caterpillar {
+      position: absolute;
+      bottom: 64px;
+      left: 50%;
+      width: 94px;
+      height: 56px;
+      transform: translateX(calc(-50% - 220px));
+      transition: transform 2s ease;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 8px rgba(73, 96, 52, .18));
+    }
+
+    .caterpillar .seg {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #b9e58d, #79c85b);
+      border: 2px solid rgba(92, 140, 65, .5);
+    }
+
+    .caterpillar .s1 { width: 26px; height: 24px; left: 0; top: 18px; }
+    .caterpillar .s2 { width: 28px; height: 26px; left: 18px; top: 14px; }
+    .caterpillar .s3 { width: 30px; height: 28px; left: 38px; top: 10px; }
+    .caterpillar .head {
+      width: 34px; height: 32px; left: 60px; top: 6px;
+      background: linear-gradient(135deg, #c7ee98, #85d45f);
+    }
+
+    .caterpillar.walk .s1,
+    .caterpillar.walk .s3,
+    .caterpillar.walk .head { animation: wobble .55s ease infinite alternate; }
+    .caterpillar.walk .s2 { animation: wobble .55s ease infinite alternate-reverse; }
+
+    @keyframes wobble {
+      from { transform: translateY(0); }
+      to { transform: translateY(-3px); }
+    }
+
+    .face {
+      position: absolute;
+      right: 6px;
+      top: 10px;
+      width: 20px;
+      height: 12px;
+    }
+
+    .eye {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #41363b;
+      border-radius: 50%;
+      top: 1px;
+    }
+
+    .eye.left { left: 2px; }
+    .eye.right { right: 2px; }
+
+    .mouth {
+      position: absolute;
+      width: 10px;
+      height: 5px;
+      border-bottom: 2px solid #41363b;
+      border-radius: 0 0 10px 10px;
+      left: 5px;
+      top: 6px;
+    }
+
+    .antenna, .antenna::after {
+      position: absolute;
+      content: '';
+      width: 2px;
+      height: 13px;
+      background: #5b8c42;
+      top: -6px;
+      left: 10px;
+      border-radius: 10px;
+      transform: rotate(-16deg);
+      transform-origin: bottom center;
+    }
+
+    .antenna::after {
+      left: 10px;
+      top: 0;
+      transform: rotate(28deg);
+    }
+
+    .meadow {
+      position: relative;
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255,255,255,.4) 0 10%, transparent 11%),
+        radial-gradient(circle at 78% 18%, rgba(255,255,255,.35) 0 8%, transparent 9%),
+        linear-gradient(to bottom, rgba(255,255,255,.18), rgba(255,255,255,.08)),
+        linear-gradient(to bottom, #caebf8 0%, #d6f0ff 22%, #c9e8d2 23%, #b8dfa9 60%, #96cb7d 100%);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.45), var(--shadow);
+      overflow: hidden;
+      min-height: 420px;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      padding: 18px 18px 12px;
+    }
+
+    .meadow::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -10px;
+      height: 120px;
+      background:
+        radial-gradient(circle at 5% 100%, #79c868 0 18%, transparent 18.4%),
+        radial-gradient(circle at 15% 100%, #86cf72 0 20%, transparent 20.4%),
+        radial-gradient(circle at 26% 100%, #74bf5e 0 18%, transparent 18.4%),
+        radial-gradient(circle at 38% 100%, #8fd37d 0 21%, transparent 21.4%),
+        radial-gradient(circle at 48% 100%, #7ec668 0 18%, transparent 18.4%),
+        radial-gradient(circle at 60% 100%, #8ad476 0 20%, transparent 20.4%),
+        radial-gradient(circle at 74% 100%, #73bf5c 0 19%, transparent 19.4%),
+        radial-gradient(circle at 87% 100%, #8dd578 0 20%, transparent 20.4%),
+        radial-gradient(circle at 97% 100%, #77c363 0 17%, transparent 17.4%);
+      opacity: .95;
+      pointer-events: none;
+    }
+
+    .screen-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 32px;
+      padding-bottom: 30px;
+      position: relative;
+    }
+
+    .cloud-screen {
+      width: min(780px, 92%);
+      min-height: 220px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 34px 26px;
+      background: rgba(255,255,255,.88);
+      border-radius: 40px;
+      box-shadow: var(--shadow), inset 0 0 0 2px rgba(255,255,255,.85);
+    }
+
+    .cloud-screen::before,
+    .cloud-screen::after {
+      content: '';
+      position: absolute;
+      background: rgba(255,255,255,.88);
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+    .cloud-screen::before {
+      width: 150px; height: 120px;
+      left: 30px; top: -32px;
+    }
+
+    .cloud-screen::after {
+      width: 170px; height: 130px;
+      right: 34px; top: -28px;
+    }
+
+    .cloud-error {
+      animation: cloudFlash .42s ease;
+    }
+
+    @keyframes cloudFlash {
+      0% { box-shadow: var(--shadow), inset 0 0 0 2px rgba(255,255,255,.85); }
+      35% { box-shadow: 0 0 0 4px rgba(239,107,107,.28), 0 12px 26px rgba(239,107,107,.22), inset 0 0 0 2px rgba(255,230,230,.9); }
+      100% { box-shadow: var(--shadow), inset 0 0 0 2px rgba(255,255,255,.85); }
+    }
+
+    .word-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .target-word {
+      font-size: clamp(2.1rem, 5vw, 4.2rem);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+    }
+
+    .word-boxes {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      min-height: 58px;
+    }
+
+    .letter-box {
+      width: 52px;
+      height: 58px;
+      border-radius: 16px;
+      background: #fffdf7;
+      border: 2px solid #eadfb7;
+      display: grid;
+      place-items: center;
+      font-size: 1.7rem;
+      font-weight: 700;
+      box-shadow: inset 0 -6px 0 rgba(246,217,122,.18);
+    }
+
+    .letter-box.filled { background: #fff7d6; }
+
+    .keyboard {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 18px 8px;
+      margin-top: auto;
+    }
+
+    .pause-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.28);
+      backdrop-filter: blur(4px);
+      z-index: 8;
+      border-radius: 34px;
+    }
+
+    .pause-overlay.show { display: flex; }
+
+    .pause-card {
+      background: rgba(255,253,248,.96);
+      border-radius: 24px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      min-width: 220px;
+    }
+
+    .pause-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+    }
+
+    .pause-card p {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .key {
+      width: 68px;
+      height: 68px;
+      border: none;
+      border-radius: 50%;
+      position: relative;
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--ink);
+      background: radial-gradient(circle at center, #fff9ee 0 38%, #f8dce8 38% 56%, #f6b7cb 56% 62%, #fff9ee 62% 100%);
+      box-shadow: 0 8px 0 #e9b2c6, 0 10px 20px rgba(78, 53, 70, .16);
+      transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+    }
+
+    .key:nth-child(3n) { background: radial-gradient(circle at center, #fff9ee 0 38%, #dceccb 38% 56%, #b8dda7 56% 62%, #fff9ee 62% 100%); box-shadow: 0 8px 0 #a6cf92, 0 10px 20px rgba(78, 53, 70, .16); }
+    .key:nth-child(4n) { background: radial-gradient(circle at center, #fff9ee 0 38%, #e1e0fa 38% 56%, #cdbff1 56% 62%, #fff9ee 62% 100%); box-shadow: 0 8px 0 #beaee8, 0 10px 20px rgba(78, 53, 70, .16); }
+    .key:nth-child(5n) { background: radial-gradient(circle at center, #fff9ee 0 38%, #fff0c7 38% 56%, #f6d97a 56% 62%, #fff9ee 62% 100%); box-shadow: 0 8px 0 #e4c75f, 0 10px 20px rgba(78, 53, 70, .16); }
+
+    .key:hover { transform: translateY(-2px); }
+    .key:active, .key.pressed {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 rgba(0,0,0,.16), 0 8px 16px rgba(78, 53, 70, .13);
+    }
+
+    .key.disabled {
+      opacity: .5;
+      pointer-events: none;
+      filter: grayscale(.15);
+    }
+
+    .statusbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .progress-line {
+      background: rgba(255,255,255,.76);
+      border-radius: 999px;
+      padding: 10px 16px;
+      box-shadow: var(--shadow);
+      font-weight: 700;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(42, 34, 62, .28);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      padding: 18px;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(460px, 100%);
+      background: #fffdf8;
+      border-radius: 28px;
+      padding: 26px 24px 22px;
+      box-shadow: 0 18px 50px rgba(47, 34, 73, .2);
+      text-align: center;
+    }
+
+    .modal h2 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+      line-height: 1.1;
+    }
+
+    .modal p {
+      margin: 8px 0;
+      font-size: 1.05rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .action-btn {
+      appearance: none;
+      border: none;
+      border-radius: 18px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      min-width: 142px;
+    }
+
+    .primary { background: var(--lavender); }
+    .secondary { background: var(--green); }
+    .soft { background: #fff1c9; }
+
+    .hide { display: none !important; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 82px 1fr; }
+      .game { padding: 14px 12px 18px; }
+      .topbar, .statusbar { grid-template-columns: 1fr 1fr; }
+      .timer-zone { min-height: 110px; }
+      .apples-row { padding: 0 48px 8px; gap: 6px; }
+      .apple { width: 42px; height: 46px; }
+      .caterpillar { width: 78px; height: 50px; bottom: 52px; }
+      .key { width: 58px; height: 58px; font-size: 1.5rem; }
+      .letter-box { width: 46px; height: 52px; }
+    }
+
+    @media (max-width: 720px) {
+      body { overflow: auto; }
+      .app { grid-template-columns: 1fr; }
+      .levels {
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 2px solid rgba(255,255,255,.45);
+      }
+      .level-btn { min-width: 62px; padding: 10px 0; }
+      .topbar, .statusbar { grid-template-columns: 1fr; }
+      .pill, .progress-line { text-align: center; justify-content: center; }
+      .cloud-screen { width: 100%; min-height: 190px; }
+      .apples-row { flex-wrap: wrap; padding: 0 20px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="levels" id="levelsPanel"></aside>
+
+    <main class="game">
+      <section class="topbar">
+        <div class="pill" id="levelInfo">Level 1</div>
+        <div class="pill" id="bestInfo">Best: —</div>
+        <div class="pill" id="applesInfo">Apples: 0</div>
+        <div class="pill" id="timeInfo">Time: 0.0s</div>
+        <button class="action-btn soft" id="caseToggleBtn">Upper case: off</button>
+        <button class="action-btn primary" id="pauseBtn">Pause</button>
+      </section>
+
+      <section class="timer-zone">
+        <div class="caterpillar" id="caterpillar" aria-hidden="true">
+          <div class="seg s1"></div>
+          <div class="seg s2"></div>
+          <div class="seg s3"></div>
+          <div class="seg head">
+            <div class="antenna"></div>
+            <div class="face">
+              <div class="eye left"></div>
+              <div class="eye right"></div>
+              <div class="mouth"></div>
+            </div>
+          </div>
+        </div>
+        <div class="apples-row" id="applesRow"></div>
+      </section>
+
+      <section class="meadow">
+        <div class="pause-overlay" id="pauseOverlay">
+          <div class="pause-card">
+            <h3>Paused</h3>
+            <p>Press Pause again to continue</p>
+          </div>
+        </div>
+        <div class="screen-wrap">
+          <div class="cloud-screen" id="cloudScreen">
+            <div class="word-area">
+              <div class="target-word" id="targetWord">cat</div>
+              <div class="word-boxes" id="wordBoxes"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyboard" id="keyboard"></div>
+      </section>
+
+      <section class="statusbar">
+        <div class="progress-line" id="progressInfo">Words: 0 / 0</div>
+        <button class="action-btn soft" id="replayWordBtn">Replay word</button>
+        <button class="action-btn secondary" id="restartBtn">Restart level</button>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h2 id="modalTitle">Level complete!</h2>
+      <p id="modalText1"></p>
+      <p id="modalText2"></p>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <script>
+    const LEVELS = [
+      {
+        level: 1,
+        letters: ['s', 'a', 't', 'p', 'i', 'n', 'c', 'k'],
+        wordsPerRound: 7,
+        apples: 5,
+        fullWordPool: ['cat', 'cap', 'sit', 'tap', 'kit', 'pin', 'sat']
+      },
+      {
+        level: 2,
+        letters: ['s', 'a', 't', 'p', 'i', 'n', 'c', 'k', 'e', 'h'],
+        wordsPerRound: 9,
+        apples: 5,
+        fullWordPool: ['hen', 'hat', 'sit', 'tap', 'pen', 'pin', 'sat', 'pet', 'net', 'cat', 'set']
+      },
+      {
+        level: 3,
+        letters: ['s', 'a', 't', 'p', 'i', 'n', 'c', 'k', 'e', 'h', 'r', 'm'],
+        wordsPerRound: 9,
+        apples: 6,
+        fullWordPool: ['rat', 'mat', 'sit', 'tap', 'man', 'pen', 'sat', 'map', 'pin']
+      },
+      {
+        level: 4,
+        letters: ['s', 'a', 't', 'c', 'k', 'e', 'd', 'g', 'p', 'i', 'n', 'h', 'r', 'm'],
+        wordsPerRound: 9,
+        apples: 6,
+        fullWordPool: ['dad', 'dim', 'rat', 'tap', 'man', 'dig', 'hid', 'map', 'sag', 'gap', 'gas', 'pin']
+      },
+      {
+        level: 5,
+        letters: ['s', 'a', 't', 'c', 'k', 'e', 'p', 'i', 'n', 'h', 'r', 'm', 'd', 'g', 'o', 'l'],
+        wordsPerRound: 9,
+        apples: 7,
+        fullWordPool: ['log', 'leg', 'rat', 'tap', 'man', 'lot', 'lip', 'map', 'hot', 'pot', 'lid', 'dog']
+      },
+      {
+        level: 6,
+        letters: ['s', 'a', 't', 'c', 'k', 'e', 'd', 'g', 'o', 'l', 'u', 'b', 'p', 'i', 'n', 'h', 'r', 'm'],
+        wordsPerRound: 8,
+        apples: 7,
+        fullWordPool: ['bug', 'bun', 'mud', 'bus', 'tub', 'cup', 'sun', 'bud']
+      },
+      {
+        level: 7,
+        letters: ['s', 'a', 't', 'c', 'k', 'e', 'd', 'g', 'o', 'l', 'u', 'b', 'p', 'i', 'n', 'h', 'r', 'm', 'f', 'v'],
+        wordsPerRound: 12,
+        apples: 8,
+        fullWordPool: ['man', 'fan', 'pan', 'van', 'cat', 'vat', 'hat', 'vet', 'bin', 'fin', 'bit', 'fib', 'pig', 'fig', 'big', 'fob', 'run', 'fun', 'bun', 'sob', 'bob', 'dim', 'vim', 'him', 'net', 'set']
+      },
+      {
+        level: 8,
+        letters: ['s', 'a', 't', 'c', 'k', 'e', 'd', 'g', 'o', 'l', 'u', 'b', 'p', 'i', 'n', 'h', 'r', 'm', 'f', 'v', 'w', 'y'],
+        wordsPerRound: 12,
+        apples: 9,
+        fullWordPool: ['met', 'wet', 'yet', 'bet', 'big', 'web', 'dig', 'wig', 'ram', 'ham', 'yak', 'yam', 'yum', 'run', 'fun', 'bin', 'fin', 'win', 'net', 'set', 'yes', 'pet']
+      },
+      {
+        level: 9,
+        letters: ['s', 'a', 't', 'c', 'k', 'e', 'd', 'g', 'o', 'l', 'u', 'b', 'p', 'i', 'n', 'h', 'r', 'm', 'f', 'v', 'w', 'y', 'q', 'z', 'x'],
+        wordsPerRound: 12,
+        apples: 10,
+        fullWordPool: ['met', 'queen', 'zip', 'bet', 'pig', 'squid', 'dig', 'zoo', 'ram', 'zebra', 'yam', 'box', 'fox', 'quiz', 'net', 'kid', 'quit', 'lid', 'mix', 'fix', 'bin', 'fin']
+      }
+    ];
+
+    const STORAGE_KEY = 'meadow-word-game-progress-v1';
+
+    const BITE_INTERVAL = 5000;
+    const BITES_PER_APPLE = 3;
+    const CRAWL_TIME = 2000;
+
+    const state = {
+      isPaused: false,
+      displayUppercase: false,
+      unlockedLevel: 1,
+      currentLevelIndex: 0,
+      levelWords: [],
+      currentWordIndex: 0,
+      currentInputIndex: 0,
+      applesLeft: 0,
+      applesTotal: 0,
+      bestScores: {},
+      lastPlayedLevel: 1,
+      startTime: 0,
+      elapsedMs: 0,
+      tickTimer: null,
+      biteTimer: null,
+      biteStage: 0,
+      currentAppleIndex: 0,
+      isAnimatingPenalty: false,
+      isRoundOver: false
+    };
+
+    const levelsPanel = document.getElementById('levelsPanel');
+    const levelInfo = document.getElementById('levelInfo');
+    const bestInfo = document.getElementById('bestInfo');
+    const applesInfo = document.getElementById('applesInfo');
+    const timeInfo = document.getElementById('timeInfo');
+    const applesRow = document.getElementById('applesRow');
+    const caterpillar = document.getElementById('caterpillar');
+    const cloudScreen = document.getElementById('cloudScreen');
+    const targetWord = document.getElementById('targetWord');
+    const wordBoxes = document.getElementById('wordBoxes');
+    const keyboard = document.getElementById('keyboard');
+    const progressInfo = document.getElementById('progressInfo');
+    const caseToggleBtn = document.getElementById('caseToggleBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const replayWordBtn = document.getElementById('replayWordBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalText1 = document.getElementById('modalText1');
+    const modalText2 = document.getElementById('modalText2');
+    const modalActions = document.getElementById('modalActions');
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        state.unlockedLevel = Math.max(1, Math.min(9, saved.unlockedLevel || 1));
+        state.bestScores = saved.bestScores || {};
+        state.lastPlayedLevel = Math.max(1, Math.min(9, saved.lastPlayedLevel || 1));
+      } catch (_) {}
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        unlockedLevel: state.unlockedLevel,
+        bestScores: state.bestScores,
+        lastPlayedLevel: state.lastPlayedLevel
+      }));
+    }
+
+    function formatTime(ms) {
+      return `${(ms / 1000).toFixed(1)}s`;
+    }
+
+    function getCurrentLevel() {
+      return LEVELS[state.currentLevelIndex];
+    }
+
+    function buildLevelsPanel() {
+      levelsPanel.innerHTML = '';
+      LEVELS.forEach((level, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'level-btn';
+        btn.textContent = level.level;
+        const unlocked = level.level <= state.unlockedLevel;
+        if (!unlocked) btn.classList.add('locked');
+        if (index === state.currentLevelIndex) btn.classList.add('active');
+        btn.disabled = !unlocked;
+        btn.addEventListener('click', () => {
+          if (!unlocked) return;
+          startLevel(index);
+        });
+        levelsPanel.appendChild(btn);
+      });
+    }
+
+    function buildKeyboard() {
+      keyboard.innerHTML = '';
+      const { letters } = getCurrentLevel();
+      letters.forEach((letter) => {
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        btn.textContent = state.displayUppercase ? letter.toUpperCase() : letter;
+        btn.dataset.letter = letter;
+        btn.addEventListener('click', () => handleLetterInput(letter, btn));
+        keyboard.appendChild(btn);
+      });
+    }
+
+    function buildApples() {
+      applesRow.innerHTML = '';
+      for (let i = 0; i < state.applesTotal; i++) {
+        const apple = document.createElement('div');
+        apple.className = 'apple';
+        apple.dataset.appleIndex = i;
+        const stem = document.createElement('div');
+        stem.className = 'stem';
+        apple.appendChild(stem);
+        applesRow.appendChild(apple);
+      }
+      updateCaterpillarPosition();
+    }
+
+    function updateCaterpillarPosition() {
+      const apples = [...applesRow.querySelectorAll('.apple')].filter(a => !a.classList.contains('empty'));
+      const allApples = [...applesRow.querySelectorAll('.apple')];
+      const target = allApples[state.currentAppleIndex] || allApples[allApples.length - 1];
+      if (!target) return;
+      const rowRect = applesRow.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const centerOffset = (targetRect.left - rowRect.left) + targetRect.width / 2;
+      caterpillar.classList.add('walk');
+      caterpillar.style.transform = `translateX(calc(-50% + ${centerOffset - rowRect.width / 2}px - 30px))`;
+      clearTimeout(caterpillar._walkTimeout);
+      caterpillar._walkTimeout = setTimeout(() => caterpillar.classList.remove('walk'), CRAWL_TIME);
+    }
+
+    function chooseRoundWords(level) {
+      return shuffle(level.fullWordPool).slice(0, level.wordsPerRound);
+    }
+
+    function currentWord() {
+      return state.levelWords[state.currentWordIndex] || '';
+    }
+
+    function renderWord() {
+      const word = currentWord();
+      targetWord.textContent = state.displayUppercase ? word.toUpperCase() : word;
+      wordBoxes.innerHTML = '';
+      [...word].forEach((letter, index) => {
+        const box = document.createElement('div');
+        box.className = 'letter-box';
+        if (index < state.currentInputIndex) {
+          box.classList.add('filled');
+          box.textContent = state.displayUppercase ? letter.toUpperCase() : letter;
+        }
+        wordBoxes.appendChild(box);
+      });
+    }
+
+    function updateInfo() {
+      const level = getCurrentLevel();
+      levelInfo.textContent = `Level ${level.level}`;
+      const best = state.bestScores[level.level] ?? '—';
+      bestInfo.textContent = `Best: ${best}`;
+      applesInfo.textContent = `Apples: ${state.applesLeft}/${state.applesTotal}`;
+      timeInfo.textContent = `Time: ${formatTime(state.elapsedMs)}`;
+      progressInfo.textContent = `Words: ${Math.min(state.currentWordIndex + (state.currentInputIndex === currentWord().length ? 1 : 0), state.levelWords.length)} / ${state.levelWords.length}`;
+    }
+
+    function startClock() {
+      clearInterval(state.tickTimer);
+      state.startTime = performance.now() - state.elapsedMs;
+      state.tickTimer = setInterval(() => {
+        if (state.isRoundOver || state.isPaused) return;
+        state.elapsedMs = performance.now() - state.startTime;
+        updateInfo();
+      }, 100);
+    }
+
+    function stopClock() {
+      clearInterval(state.tickTimer);
+      state.tickTimer = null;
+    }
+
+    function startBiteCycle() {
+      clearInterval(state.biteTimer);
+      state.biteStage = 0;
+      if (state.isRoundOver || state.isPaused) return;
+      state.biteTimer = setInterval(() => {
+        if (state.isRoundOver || state.isPaused) return;
+        applyTimedBite();
+      }, BITE_INTERVAL);
+    }
+
+    function stopBiteCycle() {
+      clearInterval(state.biteTimer);
+      state.biteTimer = null;
+    }
+
+    function applyTimedBite() {
+      const apples = applesRow.querySelectorAll('.apple');
+      const apple = apples[state.currentAppleIndex];
+      if (!apple) return;
+      state.biteStage += 1;
+      apple.classList.remove('bite-1', 'bite-2');
+      if (state.biteStage === 1) apple.classList.add('bite-1');
+      if (state.biteStage === 2) apple.classList.add('bite-2');
+      if (state.biteStage >= BITES_PER_APPLE) {
+        removeAppleByTime(apple);
+      }
+    }
+
+    function removeAppleByTime(apple) {
+      if (!apple || apple.classList.contains('empty') || state.isRoundOver) return;
+      apple.classList.add('shake');
+      setTimeout(() => {
+        apple.classList.remove('shake', 'bite-1', 'bite-2');
+        apple.classList.add('empty');
+        state.applesLeft -= 1;
+        updateInfo();
+        checkLose();
+        if (state.isRoundOver || state.isPaused) return;
+        state.currentAppleIndex += 1;
+        state.biteStage = 0;
+        updateCaterpillarPosition();
+      }, 420);
+    }
+
+    function removeApplePenalty() {
+      if (state.isAnimatingPenalty || state.isRoundOver) return;
+      const apples = [...applesRow.querySelectorAll('.apple')].filter(a => !a.classList.contains('empty'));
+      const apple = apples[apples.length - 1];
+      if (!apple) return;
+      state.isAnimatingPenalty = true;
+      apple.classList.add('shake');
+      setTimeout(() => {
+        apple.classList.remove('shake', 'bite-1', 'bite-2');
+        apple.classList.add('empty');
+        state.applesLeft -= 1;
+        state.isAnimatingPenalty = false;
+      state.isPaused = false;
+        updateInfo();
+        checkLose();
+      }, 420);
+    }
+
+    function flashError() {
+      cloudScreen.classList.remove('cloud-error');
+      void cloudScreen.offsetWidth;
+      cloudScreen.classList.add('cloud-error');
+      setTimeout(() => cloudScreen.classList.remove('cloud-error'), 450);
+    }
+
+    function handleCorrectLetter(letter) {
+      state.currentInputIndex += 1;
+      renderWord();
+      updateInfo();
+      if (state.currentInputIndex >= currentWord().length) {
+        setTimeout(() => {
+          state.currentWordIndex += 1;
+          state.currentInputIndex = 0;
+          if (state.currentWordIndex >= state.levelWords.length) {
+            winLevel();
+          } else {
+            renderWord();
+            updateInfo();
+            playWordAudio(currentWord());
+          }
+        }, 240);
+      }
+    }
+
+    function handleWrongLetter() {
+      flashError();
+      removeApplePenalty();
+    }
+
+    function handleLetterInput(letter, sourceButton = null) {
+      if (state.isRoundOver || state.isPaused) return;
+      const level = getCurrentLevel();
+      if (!level.letters.includes(letter)) return;
+      if (sourceButton) {
+        sourceButton.classList.add('pressed');
+        setTimeout(() => sourceButton.classList.remove('pressed'), 110);
+      }
+      const expected = currentWord()[state.currentInputIndex];
+      if (letter === expected) {
+        handleCorrectLetter(letter);
+      } else {
+        handleWrongLetter();
+      }
+    }
+
+    function handlePhysicalKey(event) {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        togglePause();
+        return;
+      }
+      const key = event.key?.toLowerCase();
+      if (!key || key.length !== 1 || key < 'a' || key > 'z') return;
+      const level = getCurrentLevel();
+      if (!level.letters.includes(key)) return;
+      const btn = keyboard.querySelector(`[data-letter="${key}"]`);
+      handleLetterInput(key, btn);
+    }
+
+    function updateBestScore() {
+      const levelNum = getCurrentLevel().level;
+      const best = state.bestScores[levelNum];
+      if (best == null || state.applesLeft > best) {
+        state.bestScores[levelNum] = state.applesLeft;
+      }
+      updateInfo();
+      saveProgress();
+    }
+
+    function showModal({ title, text1, text2, actions }) {
+      modalTitle.textContent = title;
+      modalText1.textContent = text1 || '';
+      modalText2.textContent = text2 || '';
+      modalActions.innerHTML = '';
+      actions.forEach(action => {
+        const btn = document.createElement('button');
+        btn.className = `action-btn ${action.className || 'primary'}`;
+        btn.textContent = action.label;
+        btn.addEventListener('click', () => {
+          hideModal();
+          action.onClick();
+        });
+        modalActions.appendChild(btn);
+      });
+      modalBackdrop.classList.add('show');
+    }
+
+    function hideModal() {
+      modalBackdrop.classList.remove('show');
+    }
+
+    function winLevel() {
+      state.isRoundOver = true;
+      stopClock();
+      stopBiteCycle();
+      updateBestScore();
+      const finishedLevel = getCurrentLevel().level;
+      if (finishedLevel < LEVELS.length) {
+        state.unlockedLevel = Math.max(state.unlockedLevel, finishedLevel + 1);
+      }
+      state.lastPlayedLevel = finishedLevel;
+      saveProgress();
+      pauseOverlay.classList.remove('show');
+      pauseBtn.textContent = 'Pause';
+      buildLevelsPanel();
+      showModal({
+        title: 'Level complete!',
+        text1: `Time: ${formatTime(state.elapsedMs)}`,
+        text2: `Apples left: ${state.applesLeft}`,
+        actions: [
+          ...(finishedLevel < LEVELS.length ? [{
+            label: 'Next level',
+            className: 'primary',
+            onClick: () => startLevel(state.currentLevelIndex + 1)
+          }] : []),
+          {
+            label: 'Play again',
+            className: 'secondary',
+            onClick: () => startLevel(state.currentLevelIndex)
+          }
+        ]
+      });
+    }
+
+    function checkLose() {
+      if (state.applesLeft > 0) return;
+      loseLevel();
+    }
+
+    function loseLevel() {
+      if (state.isRoundOver || state.isPaused) return;
+      state.isRoundOver = true;
+      stopClock();
+      stopBiteCycle();
+      showModal({
+        title: 'Game over',
+        text1: `Time: ${formatTime(state.elapsedMs)}`,
+        text2: 'All apples are gone.',
+        actions: [
+          {
+            label: 'Play again',
+            className: 'primary',
+            onClick: () => startLevel(state.currentLevelIndex)
+          },
+          {
+            label: 'Back to levels',
+            className: 'soft',
+            onClick: () => buildLevelsPanel()
+          }
+        ]
+      });
+    }
+
+    function toggleCase() {
+      state.displayUppercase = !state.displayUppercase;
+      caseToggleBtn.textContent = `Upper case: ${state.displayUppercase ? 'on' : 'off'}`;
+      buildKeyboard();
+      renderWord();
+    }
+
+    function togglePause() {
+      if (state.isRoundOver || modalBackdrop.classList.contains('show')) return;
+      state.isPaused = !state.isPaused;
+      pauseOverlay.classList.toggle('show', state.isPaused);
+      pauseBtn.textContent = state.isPaused ? 'Resume' : 'Pause';
+      if (state.isPaused) {
+        stopClock();
+        stopBiteCycle();
+      } else {
+        startClock();
+        startBiteCycle();
+      }
+    }
+
+    function playWordAudio(word) {
+      const audio = new Audio(`audio/${word}.mp3`);
+      audio.play().catch(() => {
+        /* missing file or autoplay restriction: ignore */
+      });
+    }
+
+    function startLevel(index) {
+      state.currentLevelIndex = Math.max(0, Math.min(LEVELS.length - 1, index));
+      const level = getCurrentLevel();
+      state.lastPlayedLevel = level.level;
+      state.levelWords = chooseRoundWords(level);
+      state.currentWordIndex = 0;
+      state.currentInputIndex = 0;
+      state.applesTotal = level.apples;
+      state.applesLeft = level.apples;
+      state.elapsedMs = 0;
+      state.currentAppleIndex = 0;
+      state.biteStage = 0;
+      state.isRoundOver = false;
+      state.isAnimatingPenalty = false;
+      saveProgress();
+      buildLevelsPanel();
+      buildKeyboard();
+      buildApples();
+      renderWord();
+      updateInfo();
+      startClock();
+      startBiteCycle();
+      setTimeout(() => playWordAudio(currentWord()), 250);
+    }
+
+    replayWordBtn.addEventListener('click', () => playWordAudio(currentWord()));
+    caseToggleBtn.addEventListener('click', toggleCase);
+    pauseBtn.addEventListener('click', togglePause);
+    restartBtn.addEventListener('click', () => startLevel(state.currentLevelIndex));
+    window.addEventListener('keydown', handlePhysicalKey);
+
+    loadProgress();
+    state.currentLevelIndex = Math.max(0, state.lastPlayedLevel - 1);
+    buildLevelsPanel();
+    startLevel(state.currentLevelIndex);
+  </script>
+</body>
+</html>
