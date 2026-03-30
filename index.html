@@ -1,563 +1,1267 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gold Experience activity book audio</title>
+  <title>Meadow Word Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#eef5ff;
-      --panel:#ffffff;
-      --panel-2:#f6faff;
-      --line:#c9d9f2;
-      --line-2:#dbe7f8;
-      --text:#20324a;
-      --muted:#63758f;
-      --blue:#4f8fe8;
-      --blue-strong:#2f73d9;
-      --blue-soft:#e9f2ff;
-      --shadow:0 14px 36px rgba(54,100,172,.12);
-      --radius:24px;
+    :root {
+      --lavender: #c9b6e4;
+      --green: #bfdDB8;
+      --yellow: #f6d97a;
+      --ink: #3a3450;
+      --danger: #ef6b6b;
+      --shadow: 0 10px 30px rgba(74, 63, 103, 0.12);
+      --panel: rgba(255,255,255,.78);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family: Inter, Arial, Helvetica, sans-serif;
-      color:var(--text);
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      color: var(--ink);
+      background: linear-gradient(to bottom, #dff3ff 0%, #eaf7ff 38%, #dff0d8 39%, #bfe3ac 70%, #9fd18d 100%);
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100vh;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      overflow: hidden;
+    }
+
+    .levels {
+      padding: 10px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255,255,255,.25);
+      backdrop-filter: blur(6px);
+      border-right: 2px solid rgba(255,255,255,.45);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .level-btn {
+      border: none;
+      border-radius: 18px;
+      padding: 12px 0;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255,255,255,.85);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      transition: transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+
+    .level-btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .level-btn.active { background: var(--lavender); }
+    .level-btn.locked { opacity: .45; cursor: not-allowed; }
+
+    .game {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 10px 12px 12px;
+      height: 100vh;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .topbar, .statusbar {
+      display: grid;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .topbar {
+      grid-template-columns: minmax(220px, 1fr) 118px 132px 132px 162px 122px;
+    }
+
+    .statusbar {
+      grid-template-columns: 1fr auto auto;
+    }
+
+    .pill, .action-btn, .progress-line {
+      border-radius: 999px;
+      border: none;
+      box-shadow: var(--shadow);
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .pill, .progress-line {
+      background: var(--panel);
+      padding: 8px 14px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .action-btn {
+      padding: 10px 14px;
+      cursor: pointer;
+      min-width: 112px;
+      color: var(--ink);
+    }
+
+    .primary { background: var(--lavender); }
+    .secondary { background: var(--green); }
+    .soft { background: #fff1c9; }
+
+    #levelInfo {
+      justify-content: flex-start;
+      padding-left: 18px;
+    }
+
+    .timer-zone {
+      position: relative;
+      min-height: 118px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 8px 14px 0;
+    }
+
+    .apples-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0 72px 6px;
+      min-height: 60px;
+      width: min(860px, 100%);
+    }
+
+    .apple {
+      width: 50px;
+      height: 50px;
+      transition: transform .3s ease, opacity .3s ease, filter .2s ease;
+      transform-origin: center bottom;
+    }
+
+    .apple img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .apple.empty {
+      opacity: 0;
+      transform: translateY(16px) scale(.72);
+      pointer-events: none;
+    }
+
+    .apple.shake { animation: appleShake .45s ease; }
+
+    @keyframes appleShake {
+      0%,100% { transform: rotate(0deg); }
+      20% { transform: rotate(-10deg) translateY(-2px); }
+      40% { transform: rotate(10deg) translateY(1px); }
+      60% { transform: rotate(-8deg); }
+      80% { transform: rotate(8deg); }
+    }
+
+    .caterpillar {
+      position: absolute;
+      bottom: 34px;
+      left: 50%;
+      width: 150px;
+      transform: translateX(calc(-50% - 220px));
+      transition: transform 2s ease;
+      pointer-events: none;
+      z-index: 2;
+      filter: drop-shadow(0 6px 8px rgba(73, 96, 52, .18));
+    }
+
+    .caterpillar img {
+      width: 100%;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .meadow {
+      position: relative;
+      overflow: hidden;
+      border-radius: 34px;
+      min-height: 0;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.45), var(--shadow);
       background:
-        radial-gradient(circle at top left, #ffffff 0%, #f4f8ff 35%, #eef5ff 100%);
+        linear-gradient(to bottom, rgba(255,255,255,.14), rgba(255,255,255,.08)),
+        url('images/meadow-bg.png') center/cover no-repeat;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      padding: 18px 18px 18px;
+      isolation: isolate;
     }
 
-    .app{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:22px;
-      padding:22px;
-      max-width:1500px;
-      margin:0 auto;
+    .pause-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(4px);
+      z-index: 8;
     }
 
-    .panel{
-      background:rgba(255,255,255,.86);
-      backdrop-filter: blur(10px);
-      border:1px solid rgba(201,217,242,.9);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+    .pause-overlay.show { display: flex; }
+
+    .pause-card {
+      background: rgba(255,253,248,.96);
+      border-radius: 24px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      min-width: 220px;
     }
 
-    .sidebar{
-      padding:24px;
-      display:flex;
-      flex-direction:column;
-      min-height:calc(100vh - 44px);
+    .pause-card h3 { margin: 0 0 8px; font-size: 1.8rem; }
+    .pause-card p { margin: 0; font-weight: 600; }
+
+    .screen-wrap {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 28px;
+      padding-bottom: 70px;
+      z-index: 2;
     }
 
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      width:max-content;
-      padding:8px 14px;
-      border-radius:999px;
-      background:var(--blue-soft);
-      color:var(--blue-strong);
-      border:1px solid #cfe0fb;
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:.04em;
-      text-transform:uppercase;
+    .cloud-stage {
+      position: relative;
+      width: min(900px, 97%);
+      min-height: 295px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    h1{
-      margin:16px 0 8px;
-      font-size:28px;
-      line-height:1.05;
+    .cloud-stage img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      pointer-events: none;
+      transition: filter .2s ease, transform .2s ease;
     }
 
-    .sub{
-      margin:0 0 18px;
-      color:var(--muted);
-      line-height:1.45;
+    .cloud-stage.cloud-error img {
+      filter: drop-shadow(0 0 10px rgba(239,107,107,.55));
+      transform: translateY(-2px);
     }
 
-    .search-wrap{position:relative; margin-bottom:14px;}
-    .search{
-      width:100%;
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      border-radius:18px;
-      padding:14px 16px;
-      font-size:15px;
-      outline:none;
-    }
-    .search:focus{border-color:var(--blue); box-shadow:0 0 0 4px rgba(79,143,232,.12)}
-
-    .meta{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      padding:10px 0 14px;
-      color:var(--muted);
-      font-size:14px;
+    .word-area {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 42px 12px;
+      width: min(620px, 82%);
+      text-align: center;
+      transform: translateY(-10px);
     }
 
-    .hint{
-      margin-bottom:14px;
-      padding:14px 16px;
-      border-radius:18px;
-      background:var(--panel-2);
-      border:1px solid var(--line-2);
-      color:var(--muted);
-      line-height:1.45;
-      font-size:14px;
+    .target-word {
+      font-size: clamp(2.5rem, 5.2vw, 4.6rem);
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: none;
     }
 
-    .episode-list{
-      overflow:auto;
-      padding-right:4px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      min-height:220px;
+    .word-boxes {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 58px;
     }
 
-    .episode{
-      width:100%;
-      text-align:left;
-      border:1px solid var(--line-2);
-      background:#fff;
-      color:var(--text);
-      border-radius:18px;
-      padding:14px 16px;
-      cursor:pointer;
-      transition:.18s ease;
-    }
-    .episode:hover{
-      transform:translateY(-1px);
-      border-color:#bdd4f8;
-      box-shadow:0 8px 18px rgba(79,143,232,.12);
-    }
-    .episode.active{
-      background:linear-gradient(180deg,#eef5ff 0%, #e5f0ff 100%);
-      border-color:#9fc0f4;
-      box-shadow:0 10px 20px rgba(79,143,232,.14);
-    }
-    .episode-title{
-      font-size:14px;
-      font-weight:700;
-      line-height:1.35;
-      word-break:break-word;
-    }
-    .episode-index{
-      margin-top:6px;
-      color:var(--muted);
-      font-size:12px;
+    .letter-box {
+      width: 52px;
+      height: 58px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.92);
+      border: 2px solid #eadfb7;
+      box-shadow: inset 0 -6px 0 rgba(246,217,122,.18);
+      display: grid;
+      place-items: center;
+      font-size: 1.7rem;
+      font-weight: 700;
     }
 
-    .main{
-      padding:22px;
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-      min-height:calc(100vh - 44px);
+    .letter-box.filled { background: #fff7d6; }
+
+    .keyboard-zone {
+      position: relative;
+      z-index: 3;
+      padding-top: 10px;
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 120px;
     }
 
-    .player-card{
-      padding:22px;
-      background:linear-gradient(180deg, #fdfefe 0%, #f5f9ff 100%);
-      border:1px solid var(--line);
-      border-radius:28px;
+        .keyboard {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      max-width: 760px;
+      padding: 0 10px 6px;
     }
 
-    .now-title{
-      font-size:34px;
-      line-height:1.08;
-      margin:14px 0 6px;
-      word-break:break-word;
+    .key {
+      width: 68px;
+      height: 68px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--ink);
+      background: radial-gradient(circle at center, #fff9ee 0 38%, #f8dce8 38% 56%, #f6b7cb 56% 62%, #fff9ee 62% 100%);
+      box-shadow: 0 8px 0 #e9b2c6, 0 10px 20px rgba(78, 53, 70, .16);
+      transition: transform .08s ease, box-shadow .08s ease, opacity .15s ease;
     }
 
-    .muted{color:var(--muted)}
+    .key:nth-child(3n) { background: radial-gradient(circle at center, #fff9ee 0 38%, #dceccb 38% 56%, #b8dda7 56% 62%, #fff9ee 62% 100%); box-shadow: 0 8px 0 #a6cf92, 0 10px 20px rgba(78, 53, 70, .16); }
+    .key:nth-child(4n) { background: radial-gradient(circle at center, #fff9ee 0 38%, #e1e0fa 38% 56%, #cdbff1 56% 62%, #fff9ee 62% 100%); box-shadow: 0 8px 0 #beaee8, 0 10px 20px rgba(78, 53, 70, .16); }
+    .key:nth-child(5n) { background: radial-gradient(circle at center, #fff9ee 0 38%, #fff0c7 38% 56%, #f6d97a 56% 62%, #fff9ee 62% 100%); box-shadow: 0 8px 0 #e4c75f, 0 10px 20px rgba(78, 53, 70, .16); }
 
-    .timeline-wrap{margin-top:18px;}
-    .time-row{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      font-variant-numeric:tabular-nums;
-      color:var(--muted);
-      font-size:14px;
-      margin-bottom:8px;
+    .key:hover { transform: translateY(-2px); }
+    .key:active, .key.pressed {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 rgba(0,0,0,.16), 0 8px 16px rgba(78, 53, 70, .13);
     }
 
-    input[type="range"]{
-      width:100%;
-      appearance:none;
-      -webkit-appearance:none;
-      height:8px;
-      border-radius:999px;
-      background:#d9e6fa;
-      outline:none;
-    }
-    input[type="range"]::-webkit-slider-thumb{
-      appearance:none;
-      -webkit-appearance:none;
-      width:20px;
-      height:20px;
-      border-radius:50%;
-      background:#fff;
-      border:3px solid var(--blue);
-      box-shadow:0 2px 8px rgba(79,143,232,.2);
-      cursor:pointer;
-    }
-    input[type="range"]::-moz-range-thumb{
-      width:20px;
-      height:20px;
-      border-radius:50%;
-      background:#fff;
-      border:3px solid var(--blue);
-      box-shadow:0 2px 8px rgba(79,143,232,.2);
-      cursor:pointer;
+
+    .start-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,.10), rgba(255,255,255,.08)),
+        url('images/meadow-bg.png') center/cover no-repeat;
     }
 
-    .controls{
-      display:flex;
-      flex-wrap:wrap;
-      gap:12px;
-      margin-top:18px;
-      align-items:center;
+    .start-screen.hidden { display: none; }
+
+    .start-screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(223,243,255,.65) 0%, rgba(234,247,255,.45) 30%, rgba(191,227,172,.22) 100%);
+      pointer-events: none;
     }
 
-    .btn{
-      border:none;
-      border-radius:18px;
-      background:#fff;
-      color:var(--text);
-      padding:15px 18px;
-      font-size:18px;
-      cursor:pointer;
-      border:1px solid var(--line);
-      box-shadow:0 8px 18px rgba(79,143,232,.08);
-      min-width:58px;
-    }
-    .btn:hover{transform:translateY(-1px)}
-    .btn.primary{
-      background:linear-gradient(180deg,#69a4f0 0%, #4f8fe8 100%);
-      color:#fff;
-      min-width:112px;
-      font-weight:700;
-      font-size:18px;
-      border-color:#4a88de;
-    }
-    .btn.small{
-      font-size:15px;
-      padding:14px 16px;
+    .start-card {
+      position: relative;
+      z-index: 2;
+      width: min(760px, 100%);
+      background: rgba(255,253,248,.88);
+      backdrop-filter: blur(8px);
+      border-radius: 34px;
+      box-shadow: 0 18px 50px rgba(47, 34, 73, .18);
+      padding: 34px 28px 24px;
+      text-align: center;
+      overflow: hidden;
     }
 
-    .volume-box{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      width:230px;
-      padding:12px 14px;
-      border:1px solid var(--line);
-      border-radius:18px;
-      background:#fff;
-      box-shadow:0 8px 18px rgba(79,143,232,.08);
-    }
-    .volume-box span{font-size:22px}
-
-    .list-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-top:2px;
-      margin-bottom:2px;
-    }
-    .list-header h2{
-      margin:0;
-      font-size:20px;
+    .start-title {
+      margin: 0;
+      font-size: clamp(2.5rem, 5vw, 4.2rem);
+      line-height: 1;
+      font-weight: 800;
+      color: var(--ink);
     }
 
-    .empty{
-      padding:20px;
-      border-radius:20px;
-      border:1px dashed var(--line);
-      color:var(--muted);
-      text-align:center;
-      background:#fff;
+    .start-subtitle {
+      margin: 10px 0 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: rgba(58, 52, 80, .78);
     }
 
-    audio{display:none}
-
-    @media (max-width: 1024px){
-      .app{grid-template-columns:1fr;}
-      .sidebar,.main{min-height:auto}
-      .now-title{font-size:28px}
+    .start-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 26px;
+      margin-bottom: 18px;
     }
 
-    @media (max-width: 640px){
-      .app{padding:14px; gap:14px}
-      .sidebar,.main{padding:16px}
-      h1{font-size:24px}
-      .now-title{font-size:24px}
-      .controls{gap:10px}
-      .btn{padding:13px 15px; border-radius:16px}
-      .volume-box{width:100%}
+    .start-btn {
+      min-width: 180px;
+      border: none;
+      border-radius: 22px;
+      padding: 14px 22px;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+    }
+
+
+    .case-menu {
+      margin-top: 14px;
+      background: rgba(255,255,255,.72);
+      border-radius: 24px;
+      padding: 16px 16px 14px;
+    }
+
+    .case-menu h3 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+    }
+
+    .case-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .case-btn {
+      border: none;
+      border-radius: 18px;
+      padding: 12px 16px;
+      min-width: 180px;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .case-btn.active {
+      outline: 3px solid rgba(201,182,228,.9);
+      background: #fffdf8;
+    }
+
+    .level-menu {
+      margin-top: 10px;
+      background: rgba(255,255,255,.72);
+      border-radius: 24px;
+      padding: 18px 16px 16px;
+      display: none;
+    }
+
+    .level-menu.show { display: block; }
+
+    .level-menu h3 {
+      margin: 0 0 14px;
+      font-size: 1.15rem;
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .level-choice {
+      border: none;
+      border-radius: 18px;
+      padding: 14px 10px;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font: inherit;
+      color: var(--ink);
+      text-align: center;
+    }
+
+    .level-choice strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .level-choice span {
+      display: block;
+      font-size: .9rem;
+      opacity: .78;
+    }
+
+    .start-grass {
+      display: block;
+      width: min(720px, 96%);
+      margin: 18px auto 0;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(42,34,62,.28);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 18px;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(460px, 100%);
+      background: #fffdf8;
+      border-radius: 28px;
+      padding: 26px 24px 22px;
+      box-shadow: 0 18px 50px rgba(47, 34, 73, .2);
+      text-align: center;
+    }
+
+    .modal h2 { margin: 0 0 10px; font-size: 2rem; }
+    .modal p { margin: 8px 0; font-size: 1.05rem; }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 1100px) {
+      .topbar { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 76px 1fr; }
+      .game { padding: 8px 10px 10px; }
+      .topbar { grid-template-columns: minmax(160px, 1fr) 110px 120px; }
+      .statusbar { grid-template-columns: 1fr 1fr; }
+      .timer-zone { min-height: 100px; }
+      .apple { width: 42px; height: 42px; }
+      .caterpillar { width: 118px; bottom: 28px; }
+      .apples-row { padding: 0 48px 6px; }
+      .cloud-stage { width: min(760px, 98%); min-height: 235px; }
+      .word-area { width: min(560px, 86%); padding: 24px 28px 14px; }
+      .key { width: 58px; height: 58px; font-size: 1.45rem; }
+      .letter-box { width: 44px; height: 48px; }
+      .keyboard-zone { min-height: 104px; }
+    }
+
+    
+    @media (max-width: 720px) {
+      .start-card { padding: 26px 18px 18px; }
+      .level-grid { grid-template-columns: 1fr; }
+      .start-btn { min-width: 0; width: 100%; }
+      .start-actions { flex-direction: column; }
+
+      body { overflow: auto; }
+      .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .levels {
+        position: static;
+        height: auto;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 2px solid rgba(255,255,255,.45);
+      }
+      .level-btn { min-width: 62px; }
+      .game { height: auto; overflow: visible; }
+      .topbar, .statusbar { grid-template-columns: 1fr; }
+      .timer-zone { min-height: 96px; }
+      .meadow { min-height: 420px; }
+      .cloud-stage { min-height: 220px; width: 100%; }
+      .word-area { width: 90%; padding: 20px 18px 14px; }
+      .apples-row { flex-wrap: wrap; min-height: 96px; padding: 0 20px 4px; }
+      .caterpillar { width: 108px; bottom: 44px; }
+      .keyboard-zone { min-height: 110px; }
+      .keyboard { gap: 8px; }
+      .key { width: 54px; height: 54px; font-size: 1.35rem; }
     }
   </style>
 </head>
 <body>
+  <div class="start-screen" id="startScreen">
+    <div class="start-card">
+      <h1 class="start-title">Letter Race</h1>
+      <p class="start-subtitle">Type the word before the caterpillar eats all the apples.</p>
+
+      <div class="start-actions">
+        <button class="start-btn primary" id="startGameBtn">Start Game</button>
+        <button class="start-btn secondary" id="chooseLevelBtn">Choose Level</button>
+      </div>
+
+      <div class="case-menu" id="caseMenu">
+        <h3>Letter buttons mode</h3>
+        <div class="case-actions">
+          <button class="case-btn active" id="lowercaseModeBtn">Lower case buttons</button>
+          <button class="case-btn" id="uppercaseModeBtn">Upper case buttons</button>
+        </div>
+      </div>
+
+      <div class="level-menu" id="levelMenu">
+        <h3>Choose a level</h3>
+        <div class="level-grid" id="startLevelGrid"></div>
+      </div>
+
+      <img class="start-grass" src="images/grass-front.png" alt="">
+    </div>
+  </div>
+
   <div class="app">
-    <aside class="panel sidebar">
-      <div class="badge">Audio library</div>
-      <h1>Gold Experience<br>activity book audio</h1>
-      <p class="sub">Все эпизоды аудио в одном месте. Поиск по названию, удобный список и плеер в синем интерфейсе.</p>
+    <aside class="levels" id="levelsPanel"></aside>
 
-      <div class="search-wrap">
-        <input id="searchInput" class="search" type="text" placeholder="Поиск по названию файла..." />
-      </div>
+    <main class="game">
+      <section class="topbar">
+        <div class="pill" id="levelInfo">Level 1</div>
+        <div class="pill" id="bestInfo">Best: —</div>
+        <div class="pill" id="applesInfo">Apples: 0</div>
+        <div class="pill" id="timeInfo">Time: 0.0s</div>
+        <button class="action-btn soft" id="caseToggleBtn" style="display:none;">Upper case: off</button>
+        <button class="action-btn primary" id="pauseBtn">Pause</button>
+      </section>
 
-      <div class="meta">
-        <span id="totalCount">0 эпизодов</span>
-        <span id="shownCount">Показано: 0</span>
-      </div>
+      <section class="timer-zone">
+        <div class="caterpillar" id="caterpillar" aria-hidden="true">
+          <img id="caterpillarImg" src="images/caterpillar-1.png" alt="">
+        </div>
+        <div class="apples-row" id="applesRow"></div>
+      </section>
 
-      <div class="hint" id="statusBox">Загрузка списка аудио из <strong>Audio/index.json</strong>...</div>
-
-      <div class="episode-list" id="episodeList"></div>
-    </aside>
-
-    <main class="panel main">
-      <section class="player-card">
-        <div class="badge">Сейчас выбрано</div>
-        <h2 class="now-title" id="currentTitle">Загрузка аудиофайлов...</h2>
-        <p class="muted" id="currentMeta">Подготовка плеера.</p>
-
-        <div class="timeline-wrap">
-          <div class="time-row">
-            <span id="currentTime">00:00</span>
-            <span id="duration">00:00</span>
+      <section class="meadow">
+        <div class="pause-overlay" id="pauseOverlay">
+          <div class="pause-card">
+            <h3>Paused</h3>
+            <p>Press Pause again to continue</p>
           </div>
-          <input id="progress" type="range" min="0" max="100" value="0" step="0.1" />
         </div>
 
-        <div class="controls">
-          <button class="btn" id="prevBtn" title="Предыдущий">⏮</button>
-          <button class="btn primary" id="playBtn" title="Play / Pause">▶ Play</button>
-          <button class="btn" id="nextBtn" title="Следующий">⏭</button>
-          <button class="btn small" id="backBtn" title="Назад 10 секунд">-10s</button>
-          <button class="btn small" id="forwardBtn" title="Вперёд 10 секунд">+10s</button>
-          <button class="btn small" id="speedBtn" title="Скорость">1x</button>
-          <div class="volume-box">
-            <span>🔊</span>
-            <input id="volume" type="range" min="0" max="1" step="0.01" value="1" />
+        <div class="screen-wrap">
+          <div class="cloud-stage" id="cloudStage">
+            <img src="images/cloud-screen.png" alt="">
+            <div class="word-area">
+              <div class="target-word" id="targetWord">cat</div>
+              <div class="word-boxes" id="wordBoxes"></div>
+            </div>
           </div>
+        </div>
+
+        <div class="keyboard-zone">
+          <div class="keyboard" id="keyboard"></div>
         </div>
       </section>
 
-      <section>
-        <div class="list-header">
-          <h2>Список эпизодов</h2>
-          <span class="muted">Названия совпадают с именами файлов</span>
-        </div>
+      <section class="statusbar">
+        <div class="progress-line" id="progressInfo">Words: 0 / 0</div>
+        <button class="action-btn soft" id="replayWordBtn">Replay word</button>
+        <button class="action-btn secondary" id="restartBtn">Restart level</button>
       </section>
-
-      <audio id="audio"></audio>
     </main>
   </div>
 
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h2 id="modalTitle">Level complete!</h2>
+      <p id="modalText1"></p>
+      <p id="modalText2"></p>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
   <script>
-    const AUDIO_FOLDER = 'Audio';
-    const JSON_URL = `${AUDIO_FOLDER}/index.json`;
-    const audio = document.getElementById('audio');
-    const episodeList = document.getElementById('episodeList');
-    const searchInput = document.getElementById('searchInput');
-    const currentTitle = document.getElementById('currentTitle');
-    const currentMeta = document.getElementById('currentMeta');
-    const statusBox = document.getElementById('statusBox');
-    const totalCount = document.getElementById('totalCount');
-    const shownCount = document.getElementById('shownCount');
-    const progress = document.getElementById('progress');
-    const currentTimeEl = document.getElementById('currentTime');
-    const durationEl = document.getElementById('duration');
-    const playBtn = document.getElementById('playBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const backBtn = document.getElementById('backBtn');
-    const forwardBtn = document.getElementById('forwardBtn');
-    const speedBtn = document.getElementById('speedBtn');
-    const volume = document.getElementById('volume');
+    const LEVELS = [
+      { level: 1, letters: ['s','a','t','p','i','n','c','k'], wordsPerRound: 7, apples: 5, fullWordPool: ['cat','cap','sit','tap','kit','pin','sat'] },
+      { level: 2, letters: ['s','a','t','p','i','n','c','k','e','h'], wordsPerRound: 9, apples: 5, fullWordPool: ['hen','hat','sit','tap','pen','pin','sat','pet','net','cat','set'] },
+      { level: 3, letters: ['s','a','t','p','i','n','c','k','e','h','r','m'], wordsPerRound: 9, apples: 6, fullWordPool: ['rat','mat','sit','tap','man','pen','sat','map','pin'] },
+      { level: 4, letters: ['s','a','t','c','k','e','d','g','p','i','n','h','r','m'], wordsPerRound: 9, apples: 6, fullWordPool: ['dad','dim','rat','tap','man','dig','hid','map','sag','gap','gas','pin'] },
+      { level: 5, letters: ['s','a','t','c','k','e','p','i','n','h','r','m','d','g','o','l'], wordsPerRound: 9, apples: 7, fullWordPool: ['log','leg','rat','tap','man','lot','lip','map','hot','pot','lid','dog'] },
+      { level: 6, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m'], wordsPerRound: 8, apples: 7, fullWordPool: ['bug','bun','mud','bus','tub','cup','sun','bud'] },
+      { level: 7, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v'], wordsPerRound: 12, apples: 8, fullWordPool: ['man','fan','pan','van','cat','vat','hat','vet','bin','fin','bit','fib','pig','fig','big','fob','run','fun','bun','sob','bob','dim','vim','him','net','set'] },
+      { level: 8, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y'], wordsPerRound: 12, apples: 9, fullWordPool: ['met','wet','yet','bet','big','web','dig','wig','ram','ham','yak','yam','yum','run','fun','bin','fin','win','net','set','yes','pet'] },
+      { level: 9, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y','j','x'], wordsPerRound: 12, apples: 10, fullWordPool: ['met','jam','jet','bet','bug','jug','mug','rug','ram','ham','yam','yet','pet','bin','fin','box','fox','net','mix','fix','tax','wax'] },
+      { level: 10, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y','j','x','q','z'], wordsPerRound: 12, apples: 10, fullWordPool: ['met','queen','zip','bet','pig','squid','dig','zoo','ram','zebra','yam','box','fox','quiz','net','kid','quit','lid','mix','fix','bin','fin'] }
+    ];
 
-    let files = [];
-    let filtered = [];
-    let currentIndex = -1;
-    const speeds = [1, 1.25, 1.5, 1.75, 2];
-    let speedIndex = 0;
+    const STORAGE_KEY = 'meadow-word-game-progress-v1';
+    const BITE_INTERVAL = 5000;
+    const BITES_PER_APPLE = 3;
+    const CRAWL_TIME = 2000;
 
-    function formatTime(sec){
-      if (!Number.isFinite(sec) || sec < 0) return '00:00';
-      const mins = Math.floor(sec / 60);
-      const secs = Math.floor(sec % 60);
-      return `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-    }
+    const ASSETS = {
+      apples: {
+        0: 'images/apple-full.png',
+        1: 'images/apple-bite-1.png',
+        2: 'images/apple-bite-2.png'
+      },
+      caterpillar: ['images/caterpillar-1.png', 'images/caterpillar-2.png']
+    };
 
-    function fileUrl(name){
-      return `${AUDIO_FOLDER}/${encodeURIComponent(name)}`;
-    }
+    const state = {
+      isPaused: false,
+      displayUppercase: false,
+      caseModeLocked: true,
+      unlockedLevel: 10,
+      currentLevelIndex: 0,
+      levelWords: [],
+      currentWordIndex: 0,
+      currentInputIndex: 0,
+      applesLeft: 0,
+      applesTotal: 0,
+      bestScores: {},
+      lastPlayedLevel: 1,
+      startTime: 0,
+      elapsedMs: 0,
+      tickTimer: null,
+      biteTimer: null,
+      biteStage: 0,
+      currentAppleIndex: 0,
+      isAnimatingPenalty: false,
+      isRoundOver: false,
+      walkAnimTimer: null
+    };
 
-    function renderList(){
-      const q = searchInput.value.trim().toLowerCase();
-      filtered = files.filter(name => name.toLowerCase().includes(q));
-      shownCount.textContent = `Показано: ${filtered.length}`;
-      episodeList.innerHTML = '';
+    const levelsPanel = document.getElementById('levelsPanel');
+    const levelInfo = document.getElementById('levelInfo');
+    const bestInfo = document.getElementById('bestInfo');
+    const applesInfo = document.getElementById('applesInfo');
+    const timeInfo = document.getElementById('timeInfo');
+    const applesRow = document.getElementById('applesRow');
+    const caterpillar = document.getElementById('caterpillar');
+    const caterpillarImg = document.getElementById('caterpillarImg');
+    const cloudStage = document.getElementById('cloudStage');
+    const targetWord = document.getElementById('targetWord');
+    const wordBoxes = document.getElementById('wordBoxes');
+    const keyboard = document.getElementById('keyboard');
+    const progressInfo = document.getElementById('progressInfo');
+    const caseToggleBtn = document.getElementById('caseToggleBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const replayWordBtn = document.getElementById('replayWordBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalText1 = document.getElementById('modalText1');
+    const modalText2 = document.getElementById('modalText2');
+    const modalActions = document.getElementById('modalActions');
+    const startScreen = document.getElementById('startScreen');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const chooseLevelBtn = document.getElementById('chooseLevelBtn');
+    const levelMenu = document.getElementById('levelMenu');
+    const startLevelGrid = document.getElementById('startLevelGrid');
+    const lowercaseModeBtn = document.getElementById('lowercaseModeBtn');
+    const uppercaseModeBtn = document.getElementById('uppercaseModeBtn');
 
-      if (!filtered.length){
-        episodeList.innerHTML = '<div class="empty">Ничего не найдено.</div>';
-        return;
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
+      return arr;
+    }
 
-      filtered.forEach((name, idx) => {
-        const originalIndex = files.indexOf(name);
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        state.unlockedLevel = Math.max(1, Math.min(10, saved.unlockedLevel || 1));
+        state.bestScores = saved.bestScores || {};
+        state.lastPlayedLevel = Math.max(1, Math.min(10, saved.lastPlayedLevel || 1));
+      } catch (_) {}
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        unlockedLevel: state.unlockedLevel,
+        bestScores: state.bestScores,
+        lastPlayedLevel: state.lastPlayedLevel
+      }));
+    }
+
+    function formatTime(ms) {
+      return `${(ms / 1000).toFixed(1)}s`;
+    }
+
+    function getCurrentLevel() {
+      return LEVELS[state.currentLevelIndex];
+    }
+
+    function buildLevelsPanel() {
+      levelsPanel.innerHTML = '';
+      LEVELS.forEach((level, index) => {
         const btn = document.createElement('button');
-        btn.className = 'episode' + (originalIndex === currentIndex ? ' active' : '');
-        btn.innerHTML = `
-          <div class="episode-title">${escapeHtml(name)}</div>
-          <div class="episode-index">Эпизод ${String(idx + 1).padStart(2,'0')}</div>
-        `;
-        btn.addEventListener('click', () => loadTrack(originalIndex, true));
-        episodeList.appendChild(btn);
+        btn.className = 'level-btn';
+        btn.textContent = level.level;
+        if (index === state.currentLevelIndex) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          startLevel(index);
+        });
+        levelsPanel.appendChild(btn);
       });
     }
 
-    function escapeHtml(text){
-      return text
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+    function buildKeyboard() {
+      keyboard.innerHTML = '';
+      const { letters } = getCurrentLevel();
+      letters.forEach((letter) => {
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        btn.textContent = state.displayUppercase ? letter.toUpperCase() : letter;
+        btn.dataset.letter = letter;
+        btn.addEventListener('click', () => handleLetterInput(letter, btn));
+        keyboard.appendChild(btn);
+      });
     }
 
-    function loadTrack(index, autoplay = false){
-      if (index < 0 || index >= files.length) return;
-      currentIndex = index;
-      const name = files[index];
-      audio.src = fileUrl(name);
-      currentTitle.textContent = name;
-      currentMeta.textContent = `Файл ${index + 1} из ${files.length}`;
-      progress.value = 0;
-      currentTimeEl.textContent = '00:00';
-      durationEl.textContent = '00:00';
-      renderList();
-      if (autoplay) {
-        audio.play().catch(() => {});
+    function createApple(stage = 0) {
+      const apple = document.createElement('div');
+      apple.className = 'apple';
+      apple.dataset.stage = stage;
+      const img = document.createElement('img');
+      img.src = ASSETS.apples[stage] || ASSETS.apples[0];
+      img.alt = '';
+      apple.appendChild(img);
+      return apple;
+    }
+
+    function setAppleStage(apple, stage) {
+      if (!apple || apple.classList.contains('empty')) return;
+      apple.dataset.stage = stage;
+      const img = apple.querySelector('img');
+      img.src = ASSETS.apples[stage] || ASSETS.apples[0];
+    }
+
+    function buildApples() {
+      applesRow.innerHTML = '';
+      for (let i = 0; i < state.applesTotal; i++) {
+        const apple = createApple(0);
+        apple.dataset.appleIndex = i;
+        applesRow.appendChild(apple);
       }
+      updateCaterpillarPosition(false);
     }
 
-    async function loadJson(){
-      const res = await fetch(JSON_URL, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error('JSON is not an array');
-      return data.filter(x => typeof x === 'string' && /\.(mp3|wav|m4a|ogg)$/i.test(x));
+    function startWalkAnimation() {
+      stopWalkAnimation();
+      let frame = 0;
+      caterpillarImg.src = ASSETS.caterpillar[0];
+      state.walkAnimTimer = setInterval(() => {
+        frame = frame ? 0 : 1;
+        caterpillarImg.src = ASSETS.caterpillar[frame];
+      }, 260);
     }
 
-    function updatePlayButton(){
-      playBtn.textContent = audio.paused ? '▶ Play' : '⏸ Pause';
+    function stopWalkAnimation() {
+      clearInterval(state.walkAnimTimer);
+      state.walkAnimTimer = null;
+      caterpillarImg.src = ASSETS.caterpillar[0];
     }
 
-    audio.addEventListener('loadedmetadata', () => {
-      durationEl.textContent = formatTime(audio.duration);
-    });
+    function updateCaterpillarPosition(animated = true) {
+      const allApples = [...applesRow.querySelectorAll('.apple')];
+      const target = allApples[state.currentAppleIndex] || allApples[allApples.length - 1];
+      if (!target) return;
+      const rowRect = applesRow.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const centerOffset = (targetRect.left - rowRect.left) + targetRect.width / 2;
+      if (animated) startWalkAnimation();
+      caterpillar.style.transform = `translateX(calc(-50% + ${centerOffset - rowRect.width / 2}px - 30px))`;
+      clearTimeout(caterpillar._walkTimeout);
+      caterpillar._walkTimeout = setTimeout(() => stopWalkAnimation(), animated ? CRAWL_TIME : 0);
+    }
 
-    audio.addEventListener('timeupdate', () => {
-      currentTimeEl.textContent = formatTime(audio.currentTime);
-      if (Number.isFinite(audio.duration) && audio.duration > 0){
-        progress.value = (audio.currentTime / audio.duration) * 100;
-      }
-    });
+    function chooseRoundWords(level) {
+      return shuffle(level.fullWordPool).slice(0, level.wordsPerRound);
+    }
 
-    audio.addEventListener('play', updatePlayButton);
-    audio.addEventListener('pause', updatePlayButton);
-    audio.addEventListener('ended', () => {
-      if (currentIndex < files.length - 1) loadTrack(currentIndex + 1, true);
-      else updatePlayButton();
-    });
+    function currentWord() {
+      return state.levelWords[state.currentWordIndex] || '';
+    }
 
-    progress.addEventListener('input', () => {
-      if (Number.isFinite(audio.duration) && audio.duration > 0){
-        audio.currentTime = (progress.value / 100) * audio.duration;
-      }
-    });
-
-    playBtn.addEventListener('click', () => {
-      if (!files.length) return;
-      if (currentIndex === -1) loadTrack(0, false);
-      if (audio.paused) audio.play().catch(() => {});
-      else audio.pause();
-    });
-
-    prevBtn.addEventListener('click', () => {
-      if (!files.length) return;
-      if (currentIndex > 0) loadTrack(currentIndex - 1, true);
-    });
-
-    nextBtn.addEventListener('click', () => {
-      if (!files.length) return;
-      if (currentIndex < files.length - 1) loadTrack(currentIndex + 1, true);
-    });
-
-    backBtn.addEventListener('click', () => {
-      audio.currentTime = Math.max(0, audio.currentTime - 10);
-    });
-
-    forwardBtn.addEventListener('click', () => {
-      const target = audio.currentTime + 10;
-      audio.currentTime = Number.isFinite(audio.duration) ? Math.min(audio.duration, target) : target;
-    });
-
-    speedBtn.addEventListener('click', () => {
-      speedIndex = (speedIndex + 1) % speeds.length;
-      audio.playbackRate = speeds[speedIndex];
-      speedBtn.textContent = `${speeds[speedIndex]}x`;
-    });
-
-    volume.addEventListener('input', () => {
-      audio.volume = Number(volume.value);
-    });
-
-    searchInput.addEventListener('input', renderList);
-
-    (async () => {
-      try {
-        files = await loadJson();
-        totalCount.textContent = `${files.length} эпизодов`;
-        if (!files.length) {
-          statusBox.innerHTML = 'Файл <strong>Audio/index.json</strong> найден, но список аудио пуст.';
-          currentTitle.textContent = 'Нет загруженных аудиофайлов';
-          currentMeta.textContent = 'Проверь содержимое Audio/index.json';
-          renderList();
-          return;
+    function renderWord() {
+      const word = currentWord();
+      targetWord.textContent = word;
+      wordBoxes.innerHTML = '';
+      [...word].forEach((letter, index) => {
+        const box = document.createElement('div');
+        box.className = 'letter-box';
+        if (index < state.currentInputIndex) {
+          box.classList.add('filled');
+          box.textContent = letter;
         }
-        statusBox.innerHTML = `Загружено <strong>${files.length}</strong> аудиофайлов из <strong>Audio/index.json</strong>.`;
-        renderList();
-        loadTrack(0, false);
-      } catch (err) {
-        totalCount.textContent = '0 эпизодов';
-        shownCount.textContent = 'Показано: 0';
-        currentTitle.textContent = 'Не удалось загрузить список аудио';
-        currentMeta.textContent = 'Нужен файл Audio/index.json рядом с аудиофайлами.';
-        statusBox.innerHTML = 'Не удалось прочитать <strong>Audio/index.json</strong>. Проверь, что файл загружен в папку <strong>Audio</strong> на GitHub Pages.';
-        renderList();
-        console.error(err);
+        wordBoxes.appendChild(box);
+      });
+    }
+
+    function updateInfo() {
+      const level = getCurrentLevel();
+      levelInfo.textContent = `Level ${level.level}`;
+      const best = state.bestScores[level.level] ?? '—';
+      bestInfo.textContent = `Best: ${best}`;
+      applesInfo.textContent = `Apples: ${state.applesLeft}/${state.applesTotal}`;
+      timeInfo.textContent = `Time: ${formatTime(state.elapsedMs)}`;
+      progressInfo.textContent = `Words: ${state.currentWordIndex} / ${state.levelWords.length}`;
+    }
+
+    function startClock() {
+      clearInterval(state.tickTimer);
+      state.startTime = performance.now() - state.elapsedMs;
+      state.tickTimer = setInterval(() => {
+        if (state.isRoundOver || state.isPaused) return;
+        state.elapsedMs = performance.now() - state.startTime;
+        updateInfo();
+      }, 100);
+    }
+
+    function stopClock() {
+      clearInterval(state.tickTimer);
+      state.tickTimer = null;
+    }
+
+    function startBiteCycle() {
+      clearInterval(state.biteTimer);
+      if (state.isRoundOver || state.isPaused) return;
+      state.biteTimer = setInterval(() => {
+        if (state.isRoundOver || state.isPaused) return;
+        applyTimedBite();
+      }, BITE_INTERVAL);
+    }
+
+    function stopBiteCycle() {
+      clearInterval(state.biteTimer);
+      state.biteTimer = null;
+    }
+
+    function applyTimedBite() {
+      const apples = applesRow.querySelectorAll('.apple');
+      const apple = apples[state.currentAppleIndex];
+      if (!apple) return;
+      state.biteStage += 1;
+      if (state.biteStage === 1) setAppleStage(apple, 1);
+      if (state.biteStage === 2) setAppleStage(apple, 2);
+      if (state.biteStage >= BITES_PER_APPLE) removeAppleByTime(apple);
+    }
+
+    function removeAppleByTime(apple) {
+      if (!apple || apple.classList.contains('empty') || state.isRoundOver) return;
+      apple.classList.add('shake');
+      setTimeout(() => {
+        apple.classList.remove('shake');
+        apple.classList.add('empty');
+        state.applesLeft -= 1;
+        updateInfo();
+        checkLose();
+        if (state.isRoundOver) return;
+        state.currentAppleIndex += 1;
+        state.biteStage = 0;
+        setTimeout(() => {
+          if (!state.isRoundOver && !state.isPaused) updateCaterpillarPosition(true);
+        }, CRAWL_TIME);
+      }, 420);
+    }
+
+    function removeApplePenalty() {
+      if (state.isAnimatingPenalty || state.isRoundOver) return;
+      const apples = [...applesRow.querySelectorAll('.apple')].filter(a => !a.classList.contains('empty'));
+      const apple = apples[apples.length - 1];
+      if (!apple) return;
+      state.isAnimatingPenalty = true;
+      apple.classList.add('shake');
+      setTimeout(() => {
+        apple.classList.remove('shake');
+        apple.classList.add('empty');
+        state.applesLeft -= 1;
+        state.isAnimatingPenalty = false;
+        updateInfo();
+        checkLose();
+      }, 420);
+    }
+
+    function flashError() {
+      cloudStage.classList.remove('cloud-error');
+      void cloudStage.offsetWidth;
+      cloudStage.classList.add('cloud-error');
+      setTimeout(() => cloudStage.classList.remove('cloud-error'), 450);
+    }
+
+    function handleCorrectLetter() {
+      state.currentInputIndex += 1;
+      renderWord();
+      updateInfo();
+      if (state.currentInputIndex >= currentWord().length) {
+        setTimeout(() => {
+          state.currentWordIndex += 1;
+          state.currentInputIndex = 0;
+          if (state.currentWordIndex >= state.levelWords.length) {
+            winLevel();
+          } else {
+            renderWord();
+            updateInfo();
+            playWordAudio(currentWord());
+          }
+        }, 240);
       }
-      updatePlayButton();
-    })();
+    }
+
+    function handleWrongLetter() {
+      flashError();
+      removeApplePenalty();
+    }
+
+    function handleLetterInput(letter, sourceButton = null) {
+      if (state.isRoundOver || state.isPaused) return;
+      const level = getCurrentLevel();
+      if (!level.letters.includes(letter)) return;
+      if (sourceButton) {
+        sourceButton.classList.add('pressed');
+        setTimeout(() => sourceButton.classList.remove('pressed'), 110);
+      }
+      const expected = currentWord()[state.currentInputIndex];
+      if (letter === expected) handleCorrectLetter();
+      else handleWrongLetter();
+    }
+
+    function handlePhysicalKey(event) {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        togglePause();
+        return;
+      }
+      const key = event.key?.toLowerCase();
+      if (!key || key.length !== 1 || key < 'a' || key > 'z') return;
+      const level = getCurrentLevel();
+      if (!level.letters.includes(key)) return;
+      const btn = keyboard.querySelector(`[data-letter="${key}"]`);
+      handleLetterInput(key, btn);
+    }
+
+    function updateBestScore() {
+      const levelNum = getCurrentLevel().level;
+      const best = state.bestScores[levelNum];
+      if (best == null || state.applesLeft > best) state.bestScores[levelNum] = state.applesLeft;
+      updateInfo();
+      saveProgress();
+    }
+
+    function showModal({ title, text1, text2, actions }) {
+      state.isPaused = false;
+      pauseOverlay.classList.remove('show');
+      pauseBtn.textContent = 'Pause';
+      modalTitle.textContent = title;
+      modalText1.textContent = text1 || '';
+      modalText2.textContent = text2 || '';
+      modalActions.innerHTML = '';
+      actions.forEach(action => {
+        const btn = document.createElement('button');
+        btn.className = `action-btn ${action.className || 'primary'}`;
+        btn.textContent = action.label;
+        btn.addEventListener('click', () => {
+          hideModal();
+          action.onClick();
+        });
+        modalActions.appendChild(btn);
+      });
+      modalBackdrop.classList.add('show');
+    }
+
+    function hideModal() {
+      modalBackdrop.classList.remove('show');
+    }
+
+    function winLevel() {
+      state.isRoundOver = true;
+      stopClock();
+      stopBiteCycle();
+      stopWalkAnimation();
+      updateBestScore();
+      const finishedLevel = getCurrentLevel().level;
+      if (finishedLevel < LEVELS.length) state.unlockedLevel = Math.max(state.unlockedLevel, finishedLevel + 1);
+      state.lastPlayedLevel = finishedLevel;
+      saveProgress();
+      buildLevelsPanel();
+      showModal({
+        title: 'Level complete!',
+        text1: `Time: ${formatTime(state.elapsedMs)}`,
+        text2: `Apples left: ${state.applesLeft}`,
+        actions: [
+          ...(finishedLevel < LEVELS.length ? [{ label: 'Next level', className: 'primary', onClick: () => startLevel(state.currentLevelIndex + 1) }] : []),
+          { label: 'Play again', className: 'secondary', onClick: () => startLevel(state.currentLevelIndex) },
+          { label: 'Main Menu', className: 'soft', onClick: () => showStartScreen() }
+        ]
+      });
+    }
+
+    function checkLose() {
+      if (state.applesLeft > 0) return;
+      loseLevel();
+    }
+
+    function loseLevel() {
+      if (state.isRoundOver) return;
+      state.isRoundOver = true;
+      stopClock();
+      stopBiteCycle();
+      stopWalkAnimation();
+      showModal({
+        title: 'Game over',
+        text1: `Time: ${formatTime(state.elapsedMs)}`,
+        text2: 'All apples are gone.',
+        actions: [
+          { label: 'Play again', className: 'primary', onClick: () => startLevel(state.currentLevelIndex) },
+          { label: 'Main Menu', className: 'soft', onClick: () => showStartScreen() }
+        ]
+      });
+    }
+
+    function refreshCaseButtons() {
+      lowercaseModeBtn.classList.toggle('active', !state.displayUppercase);
+      uppercaseModeBtn.classList.toggle('active', state.displayUppercase);
+      caseToggleBtn.style.display = 'none';
+    }
+
+    function setCaseMode(useUppercase) {
+      state.displayUppercase = useUppercase;
+      refreshCaseButtons();
+      buildKeyboard();
+    }
+
+    function buildStartLevelGrid() {
+      startLevelGrid.innerHTML = '';
+      LEVELS.forEach((level, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'level-choice';
+        btn.innerHTML = `<strong>Level ${level.level}</strong><span>Unit ${level.level + 2}</span>`;
+        btn.addEventListener('click', () => {
+          hideStartScreen();
+          startLevel(index);
+        });
+        startLevelGrid.appendChild(btn);
+      });
+    }
+
+    function showStartScreen() {
+      startScreen.classList.remove('hidden');
+      levelMenu.classList.remove('show');
+      refreshCaseButtons();
+    }
+
+    function hideStartScreen() {
+      startScreen.classList.add('hidden');
+    }
+
+    function toggleCase() {
+      return;
+    }
+
+    function togglePause() {
+      if (state.isRoundOver || modalBackdrop.classList.contains('show')) return;
+      state.isPaused = !state.isPaused;
+      pauseOverlay.classList.toggle('show', state.isPaused);
+      pauseBtn.textContent = state.isPaused ? 'Resume' : 'Pause';
+      if (state.isPaused) {
+        stopClock();
+        stopBiteCycle();
+        stopWalkAnimation();
+      } else {
+        startClock();
+        startBiteCycle();
+      }
+    }
+
+    function playWordAudio(word) {
+      const audio = new Audio(`audio/${word}.mp3`);
+      audio.play().catch(() => {});
+    }
+
+    function startLevel(index) {
+      state.currentLevelIndex = Math.max(0, Math.min(LEVELS.length - 1, index));
+      const level = getCurrentLevel();
+      state.lastPlayedLevel = level.level;
+      state.levelWords = chooseRoundWords(level);
+      state.currentWordIndex = 0;
+      state.currentInputIndex = 0;
+      state.applesTotal = level.apples;
+      state.applesLeft = level.apples;
+      state.elapsedMs = 0;
+      state.currentAppleIndex = 0;
+      state.biteStage = 0;
+      state.isRoundOver = false;
+      state.isAnimatingPenalty = false;
+      state.isPaused = false;
+      saveProgress();
+      pauseOverlay.classList.remove('show');
+      pauseBtn.textContent = 'Pause';
+      buildLevelsPanel();
+      buildKeyboard();
+      buildApples();
+      renderWord();
+      updateInfo();
+      startClock();
+      startBiteCycle();
+      setTimeout(() => playWordAudio(currentWord()), 250);
+    }
+
+    replayWordBtn.addEventListener('click', () => playWordAudio(currentWord()));
+    restartBtn.addEventListener('click', () => startLevel(state.currentLevelIndex));
+    pauseBtn.addEventListener('click', togglePause);
+    window.addEventListener('keydown', handlePhysicalKey);
+
+    lowercaseModeBtn.addEventListener('click', () => setCaseMode(false));
+    uppercaseModeBtn.addEventListener('click', () => setCaseMode(true));
+
+    startGameBtn.addEventListener('click', () => {
+      hideStartScreen();
+      startLevel(0);
+    });
+
+    chooseLevelBtn.addEventListener('click', () => {
+      levelMenu.classList.toggle('show');
+    });
+
+    buildStartLevelGrid();
+
+    loadProgress();
+    state.currentLevelIndex = 0;
+    caseToggleBtn.textContent = 'Upper case: off';
+    buildLevelsPanel();
+    buildKeyboard();
+    buildApples();
+    renderWord();
+    updateInfo();
+    refreshCaseButtons();
+    showStartScreen();
   </script>
 </body>
 </html>
