@@ -361,6 +361,171 @@
       box-shadow: 0 3px 0 rgba(0,0,0,.16), 0 8px 16px rgba(78, 53, 70, .13);
     }
 
+
+    .start-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,.10), rgba(255,255,255,.08)),
+        url('images/meadow-bg.png') center/cover no-repeat;
+    }
+
+    .start-screen.hidden { display: none; }
+
+    .start-screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(223,243,255,.65) 0%, rgba(234,247,255,.45) 30%, rgba(191,227,172,.22) 100%);
+      pointer-events: none;
+    }
+
+    .start-card {
+      position: relative;
+      z-index: 2;
+      width: min(760px, 100%);
+      background: rgba(255,253,248,.88);
+      backdrop-filter: blur(8px);
+      border-radius: 34px;
+      box-shadow: 0 18px 50px rgba(47, 34, 73, .18);
+      padding: 34px 28px 24px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .start-title {
+      margin: 0;
+      font-size: clamp(2.5rem, 5vw, 4.2rem);
+      line-height: 1;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .start-subtitle {
+      margin: 10px 0 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: rgba(58, 52, 80, .78);
+    }
+
+    .start-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 26px;
+      margin-bottom: 18px;
+    }
+
+    .start-btn {
+      min-width: 180px;
+      border: none;
+      border-radius: 22px;
+      padding: 14px 22px;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+    }
+
+
+    .case-menu {
+      margin-top: 14px;
+      background: rgba(255,255,255,.72);
+      border-radius: 24px;
+      padding: 16px 16px 14px;
+    }
+
+    .case-menu h3 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+    }
+
+    .case-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .case-btn {
+      border: none;
+      border-radius: 18px;
+      padding: 12px 16px;
+      min-width: 180px;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .case-btn.active {
+      outline: 3px solid rgba(201,182,228,.9);
+      background: #fffdf8;
+    }
+
+    .level-menu {
+      margin-top: 10px;
+      background: rgba(255,255,255,.72);
+      border-radius: 24px;
+      padding: 18px 16px 16px;
+      display: none;
+    }
+
+    .level-menu.show { display: block; }
+
+    .level-menu h3 {
+      margin: 0 0 14px;
+      font-size: 1.15rem;
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .level-choice {
+      border: none;
+      border-radius: 18px;
+      padding: 14px 10px;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font: inherit;
+      color: var(--ink);
+      text-align: center;
+    }
+
+    .level-choice strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .level-choice span {
+      display: block;
+      font-size: .9rem;
+      opacity: .78;
+    }
+
+    .start-grass {
+      display: block;
+      width: min(720px, 96%);
+      margin: 18px auto 0;
+      pointer-events: none;
+      user-select: none;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -414,7 +579,13 @@
       .keyboard-zone { min-height: 104px; }
     }
 
+    
     @media (max-width: 720px) {
+      .start-card { padding: 26px 18px 18px; }
+      .level-grid { grid-template-columns: 1fr; }
+      .start-btn { min-width: 0; width: 100%; }
+      .start-actions { flex-direction: column; }
+
       body { overflow: auto; }
       .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
       .levels {
@@ -441,6 +612,33 @@
   </style>
 </head>
 <body>
+  <div class="start-screen" id="startScreen">
+    <div class="start-card">
+      <h1 class="start-title">Letter Race</h1>
+      <p class="start-subtitle">Type the word before the caterpillar eats all the apples.</p>
+
+      <div class="start-actions">
+        <button class="start-btn primary" id="startGameBtn">Start Game</button>
+        <button class="start-btn secondary" id="chooseLevelBtn">Choose Level</button>
+      </div>
+
+      <div class="case-menu" id="caseMenu">
+        <h3>Letter buttons mode</h3>
+        <div class="case-actions">
+          <button class="case-btn active" id="lowercaseModeBtn">Lower case buttons</button>
+          <button class="case-btn" id="uppercaseModeBtn">Upper case buttons</button>
+        </div>
+      </div>
+
+      <div class="level-menu" id="levelMenu">
+        <h3>Choose a level</h3>
+        <div class="level-grid" id="startLevelGrid"></div>
+      </div>
+
+      <img class="start-grass" src="images/grass-front.png" alt="">
+    </div>
+  </div>
+
   <div class="app">
     <aside class="levels" id="levelsPanel"></aside>
 
@@ -450,7 +648,7 @@
         <div class="pill" id="bestInfo">Best: —</div>
         <div class="pill" id="applesInfo">Apples: 0</div>
         <div class="pill" id="timeInfo">Time: 0.0s</div>
-        <button class="action-btn soft" id="caseToggleBtn">Upper case: off</button>
+        <button class="action-btn soft" id="caseToggleBtn" style="display:none;">Upper case: off</button>
         <button class="action-btn primary" id="pauseBtn">Pause</button>
       </section>
 
@@ -511,7 +709,8 @@
       { level: 6, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m'], wordsPerRound: 8, apples: 7, fullWordPool: ['bug','bun','mud','bus','tub','cup','sun','bud'] },
       { level: 7, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v'], wordsPerRound: 12, apples: 8, fullWordPool: ['man','fan','pan','van','cat','vat','hat','vet','bin','fin','bit','fib','pig','fig','big','fob','run','fun','bun','sob','bob','dim','vim','him','net','set'] },
       { level: 8, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y'], wordsPerRound: 12, apples: 9, fullWordPool: ['met','wet','yet','bet','big','web','dig','wig','ram','ham','yak','yam','yum','run','fun','bin','fin','win','net','set','yes','pet'] },
-      { level: 9, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y','q','z','x'], wordsPerRound: 12, apples: 10, fullWordPool: ['met','queen','zip','bet','pig','squid','dig','zoo','ram','zebra','yam','box','fox','quiz','net','kid','quit','lid','mix','fix','bin','fin'] }
+      { level: 9, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y','j','x'], wordsPerRound: 12, apples: 10, fullWordPool: ['met','jam','jet','bet','bug','jug','mug','rug','ram','ham','yam','yet','pet','bin','fin','box','fox','net','mix','fix','tax','wax'] },
+      { level: 10, letters: ['s','a','t','c','k','e','d','g','o','l','u','b','p','i','n','h','r','m','f','v','w','y','j','x','q','z'], wordsPerRound: 12, apples: 10, fullWordPool: ['met','queen','zip','bet','pig','squid','dig','zoo','ram','zebra','yam','box','fox','quiz','net','kid','quit','lid','mix','fix','bin','fin'] }
     ];
 
     const STORAGE_KEY = 'meadow-word-game-progress-v1';
@@ -531,7 +730,8 @@
     const state = {
       isPaused: false,
       displayUppercase: false,
-      unlockedLevel: 1,
+      caseModeLocked: true,
+      unlockedLevel: 10,
       currentLevelIndex: 0,
       levelWords: [],
       currentWordIndex: 0,
@@ -574,6 +774,13 @@
     const modalText1 = document.getElementById('modalText1');
     const modalText2 = document.getElementById('modalText2');
     const modalActions = document.getElementById('modalActions');
+    const startScreen = document.getElementById('startScreen');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const chooseLevelBtn = document.getElementById('chooseLevelBtn');
+    const levelMenu = document.getElementById('levelMenu');
+    const startLevelGrid = document.getElementById('startLevelGrid');
+    const lowercaseModeBtn = document.getElementById('lowercaseModeBtn');
+    const uppercaseModeBtn = document.getElementById('uppercaseModeBtn');
 
     function shuffle(array) {
       const arr = [...array];
@@ -589,9 +796,9 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
         const saved = JSON.parse(raw);
-        state.unlockedLevel = Math.max(1, Math.min(9, saved.unlockedLevel || 1));
+        state.unlockedLevel = Math.max(1, Math.min(10, saved.unlockedLevel || 1));
         state.bestScores = saved.bestScores || {};
-        state.lastPlayedLevel = Math.max(1, Math.min(9, saved.lastPlayedLevel || 1));
+        state.lastPlayedLevel = Math.max(1, Math.min(10, saved.lastPlayedLevel || 1));
       } catch (_) {}
     }
 
@@ -617,12 +824,8 @@
         const btn = document.createElement('button');
         btn.className = 'level-btn';
         btn.textContent = level.level;
-        const unlocked = level.level <= state.unlockedLevel;
-        if (!unlocked) btn.classList.add('locked');
         if (index === state.currentLevelIndex) btn.classList.add('active');
-        btn.disabled = !unlocked;
         btn.addEventListener('click', () => {
-          if (!unlocked) return;
           startLevel(index);
         });
         levelsPanel.appendChild(btn);
@@ -709,14 +912,14 @@
 
     function renderWord() {
       const word = currentWord();
-      targetWord.textContent = state.displayUppercase ? word.toUpperCase() : word;
+      targetWord.textContent = word;
       wordBoxes.innerHTML = '';
       [...word].forEach((letter, index) => {
         const box = document.createElement('div');
         box.className = 'letter-box';
         if (index < state.currentInputIndex) {
           box.classList.add('filled');
-          box.textContent = state.displayUppercase ? letter.toUpperCase() : letter;
+          box.textContent = letter;
         }
         wordBoxes.appendChild(box);
       });
@@ -941,11 +1144,44 @@
       });
     }
 
-    function toggleCase() {
-      state.displayUppercase = !state.displayUppercase;
-      caseToggleBtn.textContent = `Upper case: ${state.displayUppercase ? 'on' : 'off'}`;
+    function refreshCaseButtons() {
+      lowercaseModeBtn.classList.toggle('active', !state.displayUppercase);
+      uppercaseModeBtn.classList.toggle('active', state.displayUppercase);
+      caseToggleBtn.style.display = 'none';
+    }
+
+    function setCaseMode(useUppercase) {
+      state.displayUppercase = useUppercase;
+      refreshCaseButtons();
       buildKeyboard();
-      renderWord();
+    }
+
+    function buildStartLevelGrid() {
+      startLevelGrid.innerHTML = '';
+      LEVELS.forEach((level, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'level-choice';
+        btn.innerHTML = `<strong>Level ${level.level}</strong><span>Unit ${level.level + 2}</span>`;
+        btn.addEventListener('click', () => {
+          hideStartScreen();
+          startLevel(index);
+        });
+        startLevelGrid.appendChild(btn);
+      });
+    }
+
+    function showStartScreen() {
+      startScreen.classList.remove('hidden');
+      levelMenu.classList.remove('show');
+      refreshCaseButtons();
+    }
+
+    function hideStartScreen() {
+      startScreen.classList.add('hidden');
+    }
+
+    function toggleCase() {
+      return;
     }
 
     function togglePause() {
@@ -998,15 +1234,33 @@
 
     replayWordBtn.addEventListener('click', () => playWordAudio(currentWord()));
     restartBtn.addEventListener('click', () => startLevel(state.currentLevelIndex));
-    caseToggleBtn.addEventListener('click', toggleCase);
     pauseBtn.addEventListener('click', togglePause);
     window.addEventListener('keydown', handlePhysicalKey);
 
+    lowercaseModeBtn.addEventListener('click', () => setCaseMode(false));
+    uppercaseModeBtn.addEventListener('click', () => setCaseMode(true));
+
+    startGameBtn.addEventListener('click', () => {
+      hideStartScreen();
+      startLevel(0);
+    });
+
+    chooseLevelBtn.addEventListener('click', () => {
+      levelMenu.classList.toggle('show');
+    });
+
+    buildStartLevelGrid();
+
     loadProgress();
-    state.currentLevelIndex = Math.max(0, state.lastPlayedLevel - 1);
+    state.currentLevelIndex = 0;
     caseToggleBtn.textContent = 'Upper case: off';
     buildLevelsPanel();
-    startLevel(state.currentLevelIndex);
+    buildKeyboard();
+    buildApples();
+    renderWord();
+    updateInfo();
+    refreshCaseButtons();
+    showStartScreen();
   </script>
 </body>
 </html>
